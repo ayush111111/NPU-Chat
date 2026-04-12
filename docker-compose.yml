@@ -1,5 +1,5 @@
-# Docker Compose for Open WebUI + FastFlowLM
-# This connects Open WebUI to your local FastFlowLM NPU server
+# Docker Compose for Open WebUI + Langflow + FastFlowLM
+# This connects Open WebUI and Langflow to your local FastFlowLM NPU server
 
 version: '3.8'
 
@@ -43,8 +43,31 @@ services:
     extra_hosts:
       - "host.docker.internal:host-gateway"
 
+  langflow:
+    image: langflowai/langflow:latest
+    container_name: langflow
+    ports:
+      - "7860:7860"  # Access at http://localhost:7860
+    volumes:
+      - langflow-data:/app/langflow
+    environment:
+      # Pre-configure FastFlowLM as the OpenAI-compatible endpoint
+      - OPENAI_API_KEY=dummy-key
+      - OPENAI_API_BASE=http://host.docker.internal:52625/v1
+      # Expose these to Langflow's global variables (usable in all flows)
+      - LANGFLOW_VARIABLES_TO_GET_FROM_ENVIRONMENT=OPENAI_API_KEY,OPENAI_API_BASE
+      # Database & storage
+      - LANGFLOW_CONFIG_DIR=/app/langflow
+      # Auto-login (no auth for local use)
+      - LANGFLOW_AUTO_LOGIN=true
+
+    restart: unless-stopped
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
 volumes:
   open-webui-data:
+  langflow-data:
 
 # INSTRUCTIONS:
 #
@@ -52,20 +75,19 @@ volumes:
 #    flm serve qwen3.5:2b --asr 1 --port 52625
 #    (or double-click start-flm.bat)
 #
-# 2. Start Open WebUI:
+# 2. Start all services:
 #    docker compose up -d
 #
-# 3. Open browser to http://localhost:3000
+# 3. Open WebUI  → http://localhost:3000  (chat UI)
+#    Langflow     → http://localhost:7860  (agent/flow builder)
 #
-# 4. First time: Create an account (local only, no cloud)
+# 4. In Langflow, use the OpenAI component and set:
+#    - Base URL: http://host.docker.internal:52625/v1
+#    - API Key:  dummy-key
+#    - Model:    qwen3.5:2b
 #
-# 5. In Settings > Connections:
-#    - You should see your FastFlowLM models
-#    - Upload documents for RAG
-#    - Enable STT/TTS if needed
-#
-# 6. Check logs:
+# 5. Check logs:
 #    docker compose logs -f
 #
-# 7. Stop:
+# 6. Stop:
 #    docker compose down
