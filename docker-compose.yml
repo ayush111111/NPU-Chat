@@ -19,6 +19,15 @@ services:
       # Disable Ollama (we're using FastFlowLM instead)
       - OLLAMA_BASE_URL=
 
+      # Embeddings - use FastFlowLM NPU instead of CPU model in Docker
+      - RAG_EMBEDDING_ENGINE=openai
+      - RAG_EMBEDDING_MODEL=embed-gemma:300m
+      - RAG_OPENAI_API_BASE_URL=http://host.docker.internal:52625/v1
+      - RAG_OPENAI_API_KEY=dummy-key
+      # Chunk size matched to embed-gemma:300m max context (2048 tokens ~ 8000 chars)
+      - CHUNK_SIZE=8000
+      - CHUNK_OVERLAP=200
+
       # Performance optimizations
       - WEBUI_AUTH=false  # Set to true if you want login
       - WEBUI_SECRET_KEY=change-this-secret-key
@@ -40,7 +49,7 @@ volumes:
 # INSTRUCTIONS:
 #
 # 1. Make sure FastFlowLM is running:
-#    flm serve lfm2.5-it:1.2b --asr 1 --port 52625
+#    flm serve qwen3.5:2b --asr 1 --port 52625
 #    (or double-click start-flm.bat)
 #
 # 2. Start Open WebUI:
