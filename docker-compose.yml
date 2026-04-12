@@ -1,0 +1,62 @@
+# Docker Compose for Open WebUI + FastFlowLM
+# This connects Open WebUI to your local FastFlowLM NPU server
+
+version: '3.8'
+
+services:
+  open-webui:
+    image: ghcr.io/open-webui/open-webui:main
+    container_name: open-webui
+    ports:
+      - "3000:8080"  # Access at http://localhost:3000
+    volumes:
+      - open-webui-data:/app/backend/data
+    environment:
+      # Point to FastFlowLM's OpenAI-compatible API
+      - OPENAI_API_BASE_URL=http://host.docker.internal:52625/v1
+      - OPENAI_API_KEY=dummy-key
+
+      # Disable Ollama (we're using FastFlowLM instead)
+      - OLLAMA_BASE_URL=
+
+      # Performance optimizations
+      - WEBUI_AUTH=false  # Set to true if you want login
+      - WEBUI_SECRET_KEY=change-this-secret-key
+      - ENABLE_TITLE_GENERATION=false
+      - ENABLE_FOLLOW_UP_GENERATION=false
+      - ENABLE_TAGS_GENERATION=false
+      - ENABLE_RETRIEVAL_QUERY_GENERATION=false
+      - ENABLE_IMAGE_PROMPT_GENERATION=false
+      - ENABLE_WEB_SEARCH=false
+      - ENABLE_SEARCH_QUERY_GENERATION=false
+
+    restart: unless-stopped
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+volumes:
+  open-webui-data:
+
+# INSTRUCTIONS:
+#
+# 1. Make sure FastFlowLM is running:
+#    flm serve lfm2.5-it:1.2b --asr 1 --port 52625
+#    (or double-click start-flm.bat)
+#
+# 2. Start Open WebUI:
+#    docker compose up -d
+#
+# 3. Open browser to http://localhost:3000
+#
+# 4. First time: Create an account (local only, no cloud)
+#
+# 5. In Settings > Connections:
+#    - You should see your FastFlowLM models
+#    - Upload documents for RAG
+#    - Enable STT/TTS if needed
+#
+# 6. Check logs:
+#    docker compose logs -f
+#
+# 7. Stop:
+#    docker compose down
